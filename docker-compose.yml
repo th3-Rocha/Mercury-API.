@@ -2,12 +2,16 @@ services:
   php:
     build:
       context: ./docker/php
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    user: "${UID}:${GID}"
     container_name: mercury-php
     restart: unless-stopped
     volumes:
       - ./src:/var/www/html
     env_file:
-      - .env.docker
+      - .env
     depends_on:
       mysql:
         condition: service_healthy
@@ -44,7 +48,7 @@ services:
     container_name: mercury-mysql
     restart: always
     env_file:
-      - .env.docker
+      - .env
     environment:
       TZ: ${TZ:-UTC}
     ports:
