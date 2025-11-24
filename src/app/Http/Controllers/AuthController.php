@@ -76,13 +76,32 @@ class AuthController extends Controller
         ], 200);
     }
 
+    public function validate(Request $request)
+    {
+
+
+        $user = $request->user();
+
+        if (!$user || !$request->bearerToken()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Token inválido ou expirado.'
+            ], 401);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'user' => new UserResource($user)
+        ], 200);
+    }
+
+
     public function forgotPassword(Request $request)
     {
         $validated = $request->validate([
             'email' => ['required', 'email:rfc,dns'],
         ]);
 
-        // Sempre executa o mesmo tempo para evitar timing attack
         $user = User::where('email', $validated['email'])->first();
 
         if ($user) {
@@ -97,7 +116,6 @@ class AuthController extends Controller
                 ]
             );
 
-            // Para desenvolvimento, logar no arquivo
             if (config('app.env') === 'local') {
                 Log::info('Password Reset Token', [
                     'email' => $validated['email'],
@@ -107,7 +125,6 @@ class AuthController extends Controller
             }
         }
 
-        // Sempre retorna sucesso, mesmo se usuário não existir (anti-enumeração)
         return response()->json([
             'message' => 'Se o email existir em nossa base, você receberá um link de recuperação.'
         ]);
@@ -116,34 +133,30 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $validated = $request->validate([
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email:rfc,dns'],
+            'current_password' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
         ]);
 
-        $status = Password::reset(
-            $validated,
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60));
+        $user = $request->user();
 
-                $user->save();
-
-                $user->tokens()->delete();
-
-                event(new PasswordReset($user));
-            }
-        );
-
-        if ($status === Password::PASSWORD_RESET) {
+        if (!Hash::check($validated['current_password'], $user->password)) {
             return response()->json([
-                'message' => 'Senha alterada com sucesso!'
-            ]);
+                'message' => 'Senha atual incorreta.'
+            ], 422);
         }
 
+        $user->forceFill([
+            'password' => Hash::make($validated['password'])
+        ])->setRememberToken(Str::random(60));
+
+        $user->save();
+
+        $user->tokens()->delete();
+
+        event(new PasswordReset($user));
+
         return response()->json([
-            'message' => 'Token inválido ou expirado.'
-        ], 400);
+            'message' => 'Senha alterada com sucesso!'
+        ]);
     }
 }
