@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Company;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\CompanyResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -48,21 +50,48 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}\p{N}\s\-\']+$/u'],
             'email' => ['required', 'email:rfc,dns', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+            'company_name' => ['nullable', 'string', 'max:100'],
         ]);
 
+        // Transação: Cria User e Company juntos (tudo ou nada)
+        $result = DB::transaction(function () use ($validated) {
 
-        $user = User::create([
-            'name' => strip_tags($validated['name']),
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+            // A. Cria o Usuário
+            $user = User::create([
+                'name' => strip_tags($validated['name']),
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+            // B. Cria a Empresa vinculada a esse usuário
+            $companyName = $validated['company_name'] ?? $user->name . "'s Logistics";
+
+            $company = Company::create([
+                'owner_id' => $user->id,
+                'name' => strip_tags($companyName),
+                'status' => 'trial',
+                'wallet_balance' => 0.00,
+                'settings' => [
+                    'theme' => 'blue',
+                    'currency' => 'BRL'
+                ]
+            ]);
+
+            // C. Gera o Token
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return [
+                'user' => $user,
+                'company' => $company,
+                'token' => $token
+            ];
+        });
 
         return response()->json([
-            'message' => 'User Registered',
-            'user' => new UserResource($user),
-            'token' => $token,
+            'message' => 'Conta e Transportadora criadas com sucesso!',
+            'user' => new UserResource($result['user']),
+            'company' => new CompanyResource($result['company']),
+            'token' => $result['token'],
         ], 201);
     }
 
