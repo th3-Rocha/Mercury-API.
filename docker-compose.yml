@@ -2,10 +2,6 @@ services:
   php:
     build:
       context: ./docker/php
-      args:
-        UID: ${UID}
-        GID: ${GID}
-    user: "${UID}:${GID}"
     container_name: mercury-php
     restart: unless-stopped
     volumes:
@@ -50,6 +46,10 @@ services:
     env_file:
       - .env
     environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: ${TZ:-UTC}
     ports:
       - "127.0.0.1:3307:3306"
