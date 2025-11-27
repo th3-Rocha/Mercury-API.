@@ -15,25 +15,19 @@ class Company extends Model
         'name',
         'status',
         'wallet_balance',
-        'settings',
+        'hexColor',
     ];
 
     protected $casts = [
-        'settings' => 'array',
         'wallet_balance' => 'decimal:2',
     ];
 
-    /**
-     * Relacionamento: Uma empresa pertence a um dono (User)
-     */
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    /**
-     * Relacionamento: Uma empresa pode ter vários usuários (futuramente)
-     */
     public function users()
     {
         return $this->hasMany(User::class, 'company_id');

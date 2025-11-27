@@ -19,7 +19,7 @@ class CompanyResource extends JsonResource
             'name' => $this->name,
             'status' => $this->status,
             'wallet_balance' => $this->wallet_balance,
-            'settings' => $this->settings,
+            'hexColor' => $this->hexColor,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

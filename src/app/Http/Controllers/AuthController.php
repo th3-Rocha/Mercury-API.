@@ -56,14 +56,14 @@ class AuthController extends Controller
         // Transação: Cria User e Company juntos (tudo ou nada)
         $result = DB::transaction(function () use ($validated) {
 
-            // A. Cria o Usuário
+            // 1. Create user
             $user = User::create([
                 'name' => strip_tags($validated['name']),
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
 
-            // B. Cria a Empresa vinculada a esse usuário
+            // B. create company
             $companyName = $validated['company_name'] ?? $user->name . "'s Logistics";
 
             $company = Company::create([
@@ -71,13 +71,10 @@ class AuthController extends Controller
                 'name' => strip_tags($companyName),
                 'status' => 'trial',
                 'wallet_balance' => 0.00,
-                'settings' => [
-                    'theme' => 'blue',
-                    'currency' => 'BRL'
-                ]
+                'hexColor' => "#FFFFFF"
             ]);
 
-            // C. Gera o Token
+            // C. Gen token
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return [

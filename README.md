@@ -122,3 +122,8 @@ docker compose exec php bash
 ## License
 
 This project is open-source and available under the MIT License.
+
+//
+Model::shouldBeStrict(!app()->isProduction());
+docker compose exec php composer require --dev barryvdh/laravel-ide-helper
+docker compose exec php php artisan ide-helper:models -W

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->enum('status', ['trial', 'active', 'suspended'])->default('trial');
             $table->decimal('wallet_balance', 10, 2)->default(0.00);
-            $table->json('settings')->nullable();
+            $table->string('hexColor', 10);
             $table->timestamps();
         });
     }
