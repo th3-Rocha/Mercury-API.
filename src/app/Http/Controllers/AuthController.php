@@ -27,7 +27,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             return response()->json([
-                'message' => 'Credenciais inválidas.',
+                'message' => 'Invalid Credentials.',
             ], 401);
         }
 
@@ -55,15 +55,12 @@ class AuthController extends Controller
 
         // Transação: Cria User e Company juntos (tudo ou nada)
         $result = DB::transaction(function () use ($validated) {
-
-            // 1. Create user
             $user = User::create([
                 'name' => strip_tags($validated['name']),
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
 
-            // B. create company
             $companyName = $validated['company_name'] ?? $user->name . "'s Logistics";
 
             $company = Company::create([
@@ -74,7 +71,6 @@ class AuthController extends Controller
                 'hexColor' => "#FFFFFF"
             ]);
 
-            // C. Gen token
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return [
